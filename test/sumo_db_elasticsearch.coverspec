@@ -1,0 +1,4 @@
+%% Specific modules to include in cover.
+{
+ incl_mods, [sumo_backend_elasticsearch, sumo_store_elasticsearch]
+}.
