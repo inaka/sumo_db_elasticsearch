@@ -10,5 +10,5 @@
     sumo_db
   ]},
   {modules, []},
-  {mod, {sumo_db_elasticsearch_app, []}}
+  {mod, {sumo_db_elasticsearch, []}}
 ]}.

@@ -1,4 +1,4 @@
--module(sumo_db_elasticsearch_app).
+-module(sumo_db_elasticsearch).
 
 -behaviour(application).
 

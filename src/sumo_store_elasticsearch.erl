@@ -77,26 +77,19 @@ persist(Doc, #{index := Index, pool_name := PoolName} = State) ->
     NewDoc = sleep(Doc),
     Fields = sumo_internal:doc_fields(NewDoc),
 
-    Doc1 =
+    {UpdateId, Update} =
         case Id of
             undefined ->
                 {ok, Json} =
                     tirerl:insert_doc(PoolName, Index, Type, Id, Fields),
-
                 %% Get the Id that was assigned by elasticsearch.
                 GenId = maps:get(<<"_id">>, Json),
-                Update = #{doc => maps:from_list([{IdField, GenId}])},
-
-                {ok, _ } =
-                    tirerl:update_doc(PoolName, Index, Type, GenId, Update),
-
-                sumo_internal:set_field(IdField, GenId, Doc);
+                {GenId, #{doc => maps:from_list([{IdField, GenId}])}};
             Id ->
-                Update = #{doc => Fields},
-                {ok, _ } =
-                    tirerl:update_doc(PoolName, Index, Type, Id, Update),
-                Doc
+                {Id, #{doc => Fields}}
         end,
+    {ok, _ } = tirerl:update_doc(PoolName, Index, Type, UpdateId, Update),
+    Doc1 = sumo_internal:set_field(IdField, UpdateId, Doc),
 
     {ok, Doc1, State}.
 
@@ -108,9 +101,8 @@ delete_by(DocName,
     Query = build_query(Conditions),
     Type = atom_to_binary(DocName, utf8),
 
-    {ok, #{<<"count">> := Count}} =
-        tirerl:count(PoolName, Index, Type, Query, []),
-    {ok, _} = tirerl:delete_by_query(PoolName, Index, Type, Query, []),
+    Count = count(PoolName, Index, Type, Query, []),
+    ok = delete_by_query(PoolName, Index, Type, Query, []),
 
     {ok, Count, State}.
 
@@ -120,9 +112,8 @@ delete_all(DocName, #{index := Index, pool_name := PoolName} = State) ->
     Type = atom_to_binary(DocName, utf8),
     MatchAll = #{query => #{match_all => #{}}},
 
-    {ok, #{<<"count">> := Count}} =
-        tirerl:count(PoolName, Index, Type, MatchAll, []),
-    {ok, _} = tirerl:delete_by_query(PoolName, Index, Type, MatchAll, []),
+    Count = count(PoolName, Index, Type, MatchAll, []),
+    ok = delete_by_query(PoolName, Index, Type, MatchAll, []),
 
     {ok, Count, State}.
 
@@ -245,6 +236,17 @@ normalize_type(date) -> binary;
 normalize_type(datetime) -> binary;
 normalize_type(text) -> binary;
 normalize_type(Type) -> Type.
+
+%% @private
+count(PoolName, Index, Type, Query, Params) ->
+    {ok, #{<<"count">> := Count}} =
+        tirerl:count(PoolName, Index, Type, Query, Params),
+    Count.
+
+%% @private
+delete_by_query(PoolName, Index, Type, Query, Params) ->
+  {ok, _} = tirerl:delete_by_query(PoolName, Index, Type, Query, Params),
+  ok.
 
 %% @private
 sleep(Doc) ->
