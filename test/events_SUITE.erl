@@ -22,7 +22,7 @@ all() -> [events_manager_supervisor_running].
 
 -spec init_per_suite(Config::config()) -> config().
 init_per_suite(Config) ->
-  ok = test_utils:start_apps(),
+  {ok, _} = application:ensure_all_started(sumo_db_elasticsearch),
   [{module, sumo_test_people_elasticsearch} | Config].
 
 -spec end_per_suite(Config::config()) -> config().
