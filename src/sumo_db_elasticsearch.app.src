@@ -1,0 +1,14 @@
+{application, sumo_db_elasticsearch, [
+  {description, "SumoDB ElasticSearchDB Adapter"},
+  {id, "sumo_db_elasticsearch"},
+  {registered, []},
+  {applications, [
+    kernel,
+    stdlib,
+    lager,
+    tirerl,
+    sumo_db
+  ]},
+  {modules, []},
+  {mod, {sumo_db_elasticsearch, []}}
+]}.
