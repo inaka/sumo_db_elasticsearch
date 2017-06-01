@@ -1,6 +1,7 @@
 {application, sumo_db_elasticsearch, [
   {description, "SumoDB ElasticSearchDB Adapter"},
   {id, "sumo_db_elasticsearch"},
+  {vsn, "0.0.1"},
   {registered, []},
   {applications, [
     kernel,
@@ -10,5 +11,8 @@
     sumo_db
   ]},
   {modules, []},
-  {mod, {sumo_db_elasticsearch, []}}
+  {licenses, ["Apache 2.0"]},
+  {links, [{"Github", "https://github.com/inaka/sumo_db_elasticsearch"}]},
+  {mod, {sumo_db_elasticsearch, []}},
+  {build_tools, ["rebar3"]}
 ]}.
