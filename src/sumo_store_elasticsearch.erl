@@ -172,7 +172,7 @@ create_schema(Schema, #{index := Index, pool_name := PoolName} = State) ->
     Fields = sumo_internal:schema_fields(Schema),
     Mapping = build_mapping(SchemaName, Fields),
 
-    case tirerl:is_index(PoolName, Index) of
+    _ = case tirerl:is_index(PoolName, Index) of
         false -> tirerl:create_index(PoolName, Index);
         _ -> ok
     end,
@@ -234,7 +234,7 @@ build_mapping(MappingType, Fields) ->
 
 normalize_type(date) -> binary;
 normalize_type(datetime) -> binary;
-normalize_type(text) -> binary;
+normalize_type(custom) -> binary;
 normalize_type(Type) -> Type.
 
 %% @private
@@ -250,32 +250,36 @@ delete_by_query(PoolName, Index, Type, Query, Params) ->
 
 %% @private
 sleep(Doc) ->
-    sumo_utils:doc_transform(fun sleep_fun/1, Doc).
+    sumo_utils:doc_transform(fun sleep_fun/4, Doc).
 
 %% @private
-sleep_fun({FieldType, _, FieldValue}) when FieldType =:= datetime;
+sleep_fun(FieldType, _, FieldValue, _) when FieldType =:= datetime;
                                            FieldType =:= date ->
     case {FieldType, sumo_utils:is_datetime(FieldValue)} of
       {date, true}     -> iso8601:format({FieldValue, {0, 0, 0}});
       {datetime, true} -> iso8601:format(FieldValue);
       _                -> FieldValue
     end;
-sleep_fun({_, _, undefined}) ->
+sleep_fun(_, _, undefined, _) ->
     null;
-sleep_fun({_, _, FieldValue}) ->
+sleep_fun(custom, _, FieldValue, _) ->
+    base64:encode(term_to_binary(FieldValue));
+sleep_fun(_, _, FieldValue, _) ->
     FieldValue.
 
 %% @private
 wakeup(Doc) ->
-    sumo_utils:doc_transform(fun wakeup_fun/1, Doc).
+    sumo_utils:doc_transform(fun wakeup_fun/4, Doc).
 
 %% @private
-wakeup_fun({datetime, _, FieldValue}) ->
+wakeup_fun(datetime, _, FieldValue, _) ->
     iso8601:parse(FieldValue);
-wakeup_fun({date, _, FieldValue}) ->
+wakeup_fun(date, _, FieldValue, _) ->
     {Date, _} = iso8601:parse(FieldValue),
     Date;
-wakeup_fun({_, _, null}) ->
+wakeup_fun(_, _, null, _) ->
     undefined;
-wakeup_fun({_, _, FieldValue}) ->
+wakeup_fun(custom, _, FieldValue, _) ->
+    binary_to_term(base64:decode(FieldValue));
+wakeup_fun(_, _, FieldValue, _) ->
     FieldValue.
