@@ -11,3 +11,5 @@ rel/example_project
 .erlang.mk/
 logs/
 sumo_db_elasticsearch.d
+_build/
+log/
